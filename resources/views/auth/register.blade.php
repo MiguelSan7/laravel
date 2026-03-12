@@ -88,7 +88,7 @@
     </form>
 
     {{-- reCAPTCHA v3 --}}
-    <script>
+    <script nonce="{{ $cspNonce }}">
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;

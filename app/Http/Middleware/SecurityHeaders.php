@@ -21,28 +21,32 @@ class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Nonce único por request — se comparte con las vistas ANTES de renderizar
+        $nonce = base64_encode(random_bytes(16));
+        view()->share('cspNonce', $nonce);
+
         /** @var Response $response */
         $response = $next($request);
 
         // Content-Security-Policy
-        // - default-src 'self': solo recursos del mismo origen por defecto
-        // - script-src: permite Alpine.js inline y reCAPTCHA de Google
-        // - style-src: permite estilos inline (necesario para Tailwind purge)
-        // - img-src: permite data URIs y Google (para reCAPTCHA badge)
-        // - frame-src: permite el iframe invisible de reCAPTCHA
-        // - connect-src: permite llamadas AJAX a Google reCAPTCHA
+        // - script-src: 'self' + nonce para scripts inline + dominios de reCAPTCHA
+        //   Google carga reCAPTCHA desde google.com y archivos JS desde gstatic.com
+        // - style-src: 'unsafe-inline' requerido por Tailwind CSS (clases dinámicas)
+        // - img-src: gstatic.com para el badge de reCAPTCHA, bunny.net para fuentes
+        // - font-src: bunny.net (fuente Figtree en guest layout)
+        // - frame-src: iframes invisibles que crea el widget de reCAPTCHA
+        // - connect-src: peticiones XHR del SDK de reCAPTCHA
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'nonce-".$this->getNonce()."' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
-            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'nonce-{$nonce}' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
             "img-src 'self' data: https://www.gstatic.com/",
-            "font-src 'self'",
+            "font-src 'self' https://fonts.bunny.net",
             'frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/',
-            "connect-src 'self' https://www.google.com/recaptcha/",
+            "connect-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
-            'upgrade-insecure-requests',
         ]);
 
         $response->headers->set('Content-Security-Policy', $csp);
@@ -60,18 +64,5 @@ class SecurityHeaders
         $response->headers->remove('Server');
 
         return $response;
-    }
-
-    /**
-     * Genera o recupera el nonce CSP de la sesión actual.
-     * Se usa en las vistas via @nonce o {{ $nonce }}.
-     */
-    protected function getNonce(): string
-    {
-        if (! session()->has('csp_nonce')) {
-            session(['csp_nonce' => base64_encode(random_bytes(16))]);
-        }
-
-        return session('csp_nonce');
     }
 }
