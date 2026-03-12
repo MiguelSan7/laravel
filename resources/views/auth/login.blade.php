@@ -75,7 +75,7 @@
     </form>
 
     {{-- reCAPTCHA v3: obtiene token antes del envío del formulario --}}
-    <script nonce="{{ $cspNonce }}">
+    <script>
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;

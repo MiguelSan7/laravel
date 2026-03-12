@@ -63,7 +63,7 @@
     </div>
 
     {{-- reCAPTCHA v3 --}}
-    <script nonce="{{ $cspNonce }}">
+    <script>
         document.getElementById('twoFactorForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;
