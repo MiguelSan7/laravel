@@ -47,7 +47,7 @@ class Kernel extends HttpKernel
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
         // Cabeceras de seguridad HTTP en todas las respuestas
-        SecurityHeaders::class,
+        //SecurityHeaders::class,
     ];
 
     /**
