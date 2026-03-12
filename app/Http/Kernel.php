@@ -45,6 +45,8 @@ class Kernel extends HttpKernel
         ValidatePostSize::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
+        // Cabeceras de seguridad HTTP en todas las respuestas
+        // SecurityHeaders::class,
     ];
 
     /**
@@ -58,7 +60,6 @@ class Kernel extends HttpKernel
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             ShareErrorsFromSession::class,
-            SecurityHeaders::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
         ],
