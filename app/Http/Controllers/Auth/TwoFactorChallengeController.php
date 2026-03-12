@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use App\Services\RecaptchaService;
 use App\Services\TwoFactorService;
+use App\Traits\SanitizesInput;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,8 @@ use Illuminate\View\View;
 
 class TwoFactorChallengeController extends Controller
 {
+    use SanitizesInput;
+
     public function __construct(
         protected TwoFactorService $twoFactor,
         protected RecaptchaService $recaptcha,
@@ -41,7 +44,11 @@ class TwoFactorChallengeController extends Controller
             return back()->withErrors(['code' => 'La verificación de seguridad falló. Inténtalo de nuevo.']);
         }
 
-        // 2. Validar que el código tenga el formato correcto
+        // 2. Validar y sanitizar: solo dígitos, exactamente 6
+        $code = $this->sanitizeDigits($request->input('code'));
+
+        $request->merge(['code' => $code]);
+
         $request->validate([
             'code' => ['required', 'string', 'digits:6'],
         ]);
@@ -57,7 +64,7 @@ class TwoFactorChallengeController extends Controller
 
         // 4. Verificar el código
         try {
-            $valid = $this->twoFactor->verifyCode($user, $request->input('code'));
+            $valid = $this->twoFactor->verifyCode($user, $code);
         } catch (\RuntimeException $e) {
             $messages = [
                 'two_factor_locked' => 'Tu cuenta ha sido bloqueada temporalmente por demasiados intentos fallidos. Espera 30 minutos.',

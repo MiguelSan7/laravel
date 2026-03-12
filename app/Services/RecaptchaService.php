@@ -16,8 +16,8 @@ class RecaptchaService
     public function __construct()
     {
         $this->secretKey = (string) config('recaptcha.secret_key');
-        $this->minScore = (float) config('recaptcha.min_score', 0.5);
-        $this->verifyUrl = (string) config('recaptcha.verify_url', 'https://www.google.com/recaptcha/api/siteverify');
+        $this->minScore = (float) config('recaptcha.score', 0.5);
+        $this->verifyUrl = 'https://www.google.com/recaptcha/api/siteverify';
     }
 
     /**

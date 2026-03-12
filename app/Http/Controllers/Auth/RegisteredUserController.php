@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use App\Services\RecaptchaService;
+use App\Traits\SanitizesInput;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,8 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
+    use SanitizesInput;
+
     public function __construct(
         protected RecaptchaService $recaptcha,
     ) {}
@@ -43,19 +46,25 @@ class RegisteredUserController extends Controller
                 ->withErrors(['email' => 'La verificación de seguridad falló. Inténtalo de nuevo.']);
         }
 
-        // 2. Validar campos del formulario
+        // 2. Sanitizar antes de validar
+        $name = $this->sanitizeString($request->input('name'));
+        $email = $this->sanitizeEmail($request->input('email'));
+
+        $request->merge(['name' => $name, 'email' => $email]);
+
+        // 3. Validar
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // 3. Crear usuario con 2FA activado por defecto
+        // 4. Crear usuario con 2FA activado por defecto
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name' => $name,
+            'email' => $email,
             'password' => Hash::make($request->password),
-            'two_factor_enabled' => true, // habilitado por defecto para todos
+            'two_factor_enabled' => true,
         ]);
 
         event(new Registered($user));

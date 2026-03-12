@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Traits\SanitizesInput;
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -11,6 +13,19 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    use SanitizesInput;
+
+    /**
+     * Sanitiza los inputs antes de la validación:
+     * - Email: strip_tags + trim + minúsculas + FILTER_SANITIZE_EMAIL
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => $this->sanitizeEmail($this->input('email')),
+        ]);
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,20 +37,20 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+     * @return array<string, Rule|array|string>
      */
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'email' => ['required', 'string', 'email:rfc', 'max:255'],
+            'password' => ['required', 'string', 'max:255'],
         ];
     }
 
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function authenticate(): void
     {
@@ -55,7 +70,7 @@ class LoginRequest extends FormRequest
     /**
      * Ensure the login request is not rate limited.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {
