@@ -70,10 +70,11 @@ class AuthenticatedSessionController extends Controller
 
         // 4. Si tiene 2FA habilitado, enviar código y redirigir
         if ($user->two_factor_enabled) {
-            $request->session()->regenerate();
-            // Guardamos el ID del usuario en sesión para el challenge
-            session(['two_factor_user_id' => $user->id]);
-            Auth::guard('web')->logout(); // deslogueamos hasta que pase el 2FA
+            Auth::guard('web')->logout();           // deslogueamos hasta que pase el 2FA
+            $request->session()->invalidate();      // limpia la sesión vieja
+            $request->session()->regenerateToken();  // nuevo CSRF token
+            $request->session()->regenerate();       // nueva sesión limpia
+            session(['two_factor_user_id' => $user->id]); // guardar DESPUÉS de regenerar
             $this->twoFactor->sendCode($user);
 
             return redirect()->route('two-factor.challenge')
