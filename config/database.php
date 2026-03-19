@@ -63,6 +63,7 @@ return [
                 PDO::MYSQL_ATTR_SSL_CERT => '/home/miky/laravel/certs/client-cert.pem',
                 PDO::MYSQL_ATTR_SSL_KEY => '/home/miky/laravel/certs/client-key.pem',
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             ] : [],
         ],
 
